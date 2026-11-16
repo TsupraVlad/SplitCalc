@@ -1,0 +1,21 @@
+# Byte-compiled / cache
+__pycache__/
+*.py[cod]
+.pytest_cache/
+
+# Virtual environments
+.venv/
+venv/
+env/
+
+# Build (PyInstaller)
+build/
+dist/
+*.spec
+
+# IDE
+.vscode/
+.idea/
+
+# Звіти, експортовані програмою
+*_звіт.txt

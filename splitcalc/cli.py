@@ -2,12 +2,12 @@
 from __future__ import annotations
 
 from decimal import Decimal, InvalidOperation
+from pathlib import Path
 
 from . import __version__
-from .balances import compute_balances
 from .currency import CurrencyConverter
 from .models import Expense, Group, SplitType, ValidationError
-from .settlement import minimize_transfers
+from .reports import explanation_report, export_report, settlement_report
 from .storage import Storage
 
 CATEGORIES = ["Житло", "Продукти", "Транспорт", "Розваги", "Кафе", "Інше"]
@@ -119,13 +119,15 @@ class App:
         actions = {
             "1": self.add_member, "2": self.remove_member, "3": self.add_expense,
             "4": self.show_expenses, "5": self.remove_expense, "6": self.show_report,
+            "7": self.explain, "8": self.export,
         }
         while True:
             self.print(f"\nГРУПА «{group.name}» ({group.base_currency}) — учасників: "
                        f"{len(group.members)}, витрат: {len(group.expenses)}\n"
                        "  1. Додати учасника\n  2. Видалити учасника\n  3. Додати витрату\n"
                        "  4. Переглянути витрати\n  5. Видалити витрату\n"
-                       "  6. Розрахувати (баланси та перекази)\n  0. Назад")
+                       "  6. Розрахувати (баланси та перекази)\n  7. Пояснити баланс учасника\n"
+                       "  8. Експортувати звіт у файл\n  0. Назад")
             choice = self.ask("Ваш вибір: ")
             if choice == "0":
                 return
@@ -213,17 +215,25 @@ class App:
         if not group.expenses:
             self.print("  Витрат ще немає — розраховувати нічого.")
             return False
-        cur = group.base_currency
-        balances = compute_balances(group, self.converter)
-        self.print("Баланси учасників:")
-        for name, bal in balances.items():
-            shown = f"{bal:+.2f}" if bal else f"{bal:.2f}"
-            self.print(f"  {name:<12} {shown:>11} {cur}")
-        transfers = minimize_transfers(balances)
-        if not transfers:
-            self.print("Усі учасники розрахувалися — переказів не потрібно.")
-        for k, t in enumerate(transfers, 1):
-            self.print(f"  {k}. {t.debtor} → {t.creditor}: {t.amount:.2f} {cur}")
+        self.print(settlement_report(group, self.converter))
+        return False
+
+    def explain(self, group: Group) -> bool:
+        if not group.members:
+            self.print("  У групі немає учасників.")
+            return False
+        member = self.choose("Номер учасника: ", group.members)
+        self.print(explanation_report(group, self.converter, member))
+        return False
+
+    def export(self, group: Group) -> bool:
+        if not group.expenses:
+            self.print("  Витрат ще немає — експортувати нічого.")
+            return False
+        default = f"{group.name}_звіт.txt"
+        path = Path(self.ask(f"Ім'я файлу [{default}]: ") or default)
+        export_report(settlement_report(group, self.converter), path)
+        self.print(f"Звіт збережено у файл {path.resolve()}")
         return False
 
 

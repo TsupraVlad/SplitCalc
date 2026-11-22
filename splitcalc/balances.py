@@ -7,9 +7,8 @@ def split_expense(e, amount):
     """Частка кожного учасника в копійках."""
     people = e.participants
     if e.split_type == SplitType.EQUAL:
-        share = amount // len(people)
-        return {p: share for p in people}
-    if e.split_type == SplitType.PERCENT:
+        shares = {p: amount // len(people) for p in people}
+    elif e.split_type == SplitType.PERCENT:
         shares = {p: amount * e.shares[p] // 100 for p in people}
     else:
         shares = {p: e.shares[p] * amount // e.amount for p in people}

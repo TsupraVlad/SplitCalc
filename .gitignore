@@ -2,3 +2,6 @@ __pycache__/
 *.pyc
 *_звіт.txt
 .venv/
+build/
+dist/
+*.spec

@@ -1,0 +1,36 @@
+name: SplitCalc CI/CD
+
+on:
+  push:
+    branches: [ main ]
+
+permissions:
+  contents: write
+
+jobs:
+  build-release:
+    runs-on: windows-latest
+    steps:
+      - name: Інформація про автора
+        run: |
+          echo "Автор: Цупра Владислав Васильович, група КВ-42"
+          echo "Коміт: ${{ github.sha }}"
+          echo "Запустив: ${{ github.actor }}"
+
+      - name: Отримання коду
+        uses: actions/checkout@v4
+
+      - name: Встановлення Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+
+      - name: Збирання SplitCalc.exe
+        run: |
+          pip install pyinstaller
+          pyinstaller --onefile --name SplitCalc main.py
+
+      - name: Публікація релізу
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: gh release create "v1.0.${{ github.run_number }}" dist/SplitCalc.exe --title "SplitCalc v1.0.${{ github.run_number }}" --notes "Автор: Цупра В.В., КВ-42"
